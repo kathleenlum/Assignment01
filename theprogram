@@ -1,0 +1,256 @@
+"""
+CS 3A  - Lab Assignment 10, Contact list, Part 2
+Kathleen Lum
+This mimics stored contacts, it is able to sort, search and create contacts
+"""
+
+
+class Sorter:
+    @staticmethod
+    def float_largest_to_top(lst, size):
+        #nothing much is changed for this method
+        #just using compare signs to order the list
+        swapped = False
+        for i in range(size - 1):
+            if lst[i] > lst[i + 1]:
+                lst[i], lst[i + 1] = lst[i + 1], lst[i]
+                swapped = True
+
+        return swapped
+
+    @staticmethod
+    def sort(lst, by):
+
+        size = len(lst)
+        while Sorter.float_largest_to_top(lst, size):
+            size -= 1
+
+
+class Contact:
+
+    def __init__(self, first_name, last_name, email=None, phone=None):
+
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+        self.phone = phone
+
+    def __str__(self):
+ 
+        return (f"Name:  {self.first_name} {self.last_name}\n"
+                f"Email: {self.email}\n"
+                f"Phone: {self.phone}\n")
+
+    @property
+    def first_name(self):
+        return self._first_name
+
+    @first_name.setter
+    def first_name(self, first_name):
+        if type(first_name) != str:
+            raise TypeError("Invalid first name, should be str")
+        if len(first_name) == 0:
+            raise ValueError("First name cannot be empty")
+        self._first_name = first_name
+
+    @property
+    def last_name(self):
+        return self._last_name
+
+    @last_name.setter
+    def last_name(self, last_name):
+        if type(last_name) != str:
+            raise TypeError("Invalid last name, should be str")
+        if len(last_name) == 0:
+            raise ValueError("Last name cannot be empty")
+        self._last_name = last_name
+
+    @property
+    def email(self):
+        return self._email
+
+    @email.setter
+    def email(self, email):
+        if email is not None:
+            if type(email) != str:
+                raise TypeError("Invalid type for email")
+            if "@" not in email:
+                raise ValueError("Invalid email")
+        self._email = email
+
+    @property
+    def phone(self):
+        return self._phone
+
+    @phone.setter
+    def phone(self, phone):
+        if phone is not None:
+            if type(phone) != str:
+                raise TypeError("Invalid type for phone")
+            if int(phone) <= 0:
+                raise ValueError("Phone number cannot be negative")
+        self._phone = phone
+
+
+class ContactList:
+
+    BY_FIRST_NAME = 1  # sort/find by first name
+    BY_LAST_NAME = 2  # sort/find by last name
+
+    def __init__(self):
+        self._contacts = []
+        self._dict_firstname = {}  # dict with firstname key
+        self._dict_lastname = {}  # dict with lastname key
+        # TODO part 2: add any necessary code to help search by first/last name
+
+    def clear(self):
+        self._contacts.clear()
+        self._dict_firstname.clear()
+        self._dict_lastname.clear()
+
+    @property
+    def contacts(self):
+        return self._contacts
+    @property
+    def dict_firstname(self):
+        return self._dict_firstname
+    @property
+    def dict_lastname(self):
+        return self._dict_lastname
+    def add(self, contact):
+        if type(contact) != Contact:
+            raise TypeError(f"Type is {type(contact).__class__.__name__}, not Contact")
+
+        self._dict_firstname[contact.first_name] = contact
+
+        self._dict_lastname[contact.last_name] = contact
+        self._contacts.append(contact)
+
+    def find(self, name, by):
+        retval = None
+        name.lower()
+        try:
+            if by == ContactList.BY_FIRST_NAME:
+                retval = self.dict_firstname[name]
+            elif by == ContactList.BY_LAST_NAME:
+                retval = self.dict_lastname[name]
+            else:
+                raise ValueError("Invalid argument passed for the 'by' parameter")
+        except KeyError:
+            print("input not found, try checking capitalization")
+        return retval
+
+    def __str__(self, by=BY_FIRST_NAME):
+        names = []
+        if by == ContactList.BY_FIRST_NAME:
+            names = [x._first_name for x in self._contacts]
+
+        elif by == ContactList.BY_LAST_NAME:
+            names = [a._last_name for a in self._contacts]
+        else:
+            raise ValueError("Invalid value for 'by' parameter")
+        Sorter.sort(names, by)
+   
+        self._contacts = [self.find(k, by) for k in names]
+        return "\n".join([str(c) for c in self._contacts])
+
+
+def get_choice():
+    while True:
+        try:
+            choice = int(input(
+                "\n"
+                "****** Contact List ******\n"
+                "Please choose from the following actions:\n"
+                "  1. Load contacts from file\n"
+                "  2. Print all contacts, sorted by first name\n"
+                "  3. Print all contacts, sorted by last name\n"
+                "  4. Search all contacts by first name\n"
+                "  5. Search all contact by last name\n"
+                "  6. Quit\n"
+                "Please enter your choice: "))
+            return choice
+        except:
+            print("Invalid input, only choices 1-6 accepted")
+
+
+def line_to_contact(line):
+
+    fields = [f.strip() for f in line.split(",")]
+    if len(fields) > 2:
+        contact.email = fields[2]
+    if len(fields) > 3:
+        contact.phone = fields[3]
+
+    return contact
+
+def load_contacts_from_file(contact_list, filename):
+    with open(filename) as f:
+        for line in f:
+            try:
+                contact = line_to_contact(line)
+                contact_list.add(contact)
+            except:
+                pass
+
+
+def load_contacts(contact_list):
+    filename = input("Enter the name of the file to load: ")
+    contact_list.clear()
+
+    try:
+        load_contacts_from_file(contact_list, filename)
+        print("Loaded {} contacts from {}".format(len(contact_list.contacts), filename))
+    except Exception as e:
+        print("Problem loading contacts: {}".format(e))
+
+def print_by_first_name(contact_list):
+    print("\n" + contact_list.__str__(ContactList.BY_FIRST_NAME))
+
+def print_by_last_name(contact_list):
+    print("\n" + contact_list.__str__(ContactList.BY_LAST_NAME))
+
+def find_contact(contact_list, by):
+    name = input("Please enter the name to search: ")
+    contact = contact_list.find(name, by)
+    print("\n" + str(contact))
+
+
+def find_by_first_name(contact_list):
+    find_contact(contact_list, ContactList.BY_FIRST_NAME)
+
+
+def find_by_last_name(contact_list):
+    find_contact(contact_list, ContactList.BY_LAST_NAME)
+
+
+def quit(contact_list):
+    print("Bye!")
+    exit(0)
+
+
+def main():
+    contact_list = ContactList()
+
+    while True:
+        choice = get_choice()
+
+        if choice == 1:
+            load_contacts(contact_list)
+        elif choice == 2:
+            print_by_first_name(contact_list)
+        elif choice == 3:
+            print_by_last_name(contact_list)
+        elif choice == 4:
+            find_by_first_name(contact_list)
+        elif choice == 5:
+            find_by_last_name(contact_list)
+        elif choice == 6:
+            quit(contact_list)
+        else:
+            print("Invalid choice")
+
+
+if __name__ == '__main__':
+    main()
+    
